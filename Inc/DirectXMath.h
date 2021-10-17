@@ -1,7 +1,7 @@
 //-------------------------------------------------------------------------------------
 // DirectXMath.h -- SIMD C++ Math library
 //
-// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkID=615560
@@ -97,12 +97,16 @@
 #define _XM_NO_XMVECTOR_OVERLOADS_
 #endif
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4514 4820)
 // C4514/4820: Off by default noise
+#endif
 #include <math.h>
 #include <float.h>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 #ifndef _XM_NO_INTRINSICS_
 
@@ -143,14 +147,40 @@
 #endif
 #endif // !_XM_NO_INTRINSICS_
 
+#ifdef _MSC_VER
+
 #include "sal.h"
+
+#define _sal_In_ _In_
+#define _sal_In_reads_(size) _In_reads_(size)
+#define _sal_In_reads_bytes_(size) _In_reads_bytes_(size)
+#define _sal_Out_ _Out_
+#define _sal_Out_opt_ _Out_opt_
+#define _sal_Out_writes_(size) _Out_writes_(size)
+#define _sal_Out_writes_bytes_(size) _Out_writes_bytes_(size)
+
+#else
+
+#define _sal_In_
+#define _sal_In_reads_(size)
+#define _sal_In_reads_bytes_(size)
+#define _sal_Out_
+#define _sal_Out_opt
+#define _sal_Out_writes_(size)
+#define _sal_Out_writes_bytes_(size)
+
+#endif
 #include <assert.h>
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4005 4668)
 // C4005/4668: Old header issue
+#endif
 #include <stdint.h>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 #if __cplusplus >= 201703L
 #define XM_ALIGNED_DATA(x) alignas(x)
@@ -193,12 +223,6 @@
 #define XM_PERMUTE_PS( v, c ) _mm_permute_ps((v), c )
 #else
 #define XM_PERMUTE_PS( v, c ) _mm_shuffle_ps((v), (v), c )
-#endif
-
-#if defined(__GNUC__) && !defined(__clang__) && (__GNUC__ < 11)
-#define XM_LOADU_SI16( p ) _mm_cvtsi32_si128(*reinterpret_cast<unsigned short const*>(p))
-#else
-#define XM_LOADU_SI16( p ) _mm_loadu_si16(p)
 #endif
 
 #endif // _XM_SSE_INTRINSICS_ && !_XM_NO_INTRINSICS_
@@ -277,11 +301,7 @@ namespace DirectX
     constexpr uint32_t XM_CRMASK_CR6FALSE = 0x00000020;
     constexpr uint32_t XM_CRMASK_CR6BOUNDS = XM_CRMASK_CR6FALSE;
 
-#if defined(_M_ARM) || defined(_M_ARM64) || defined(_M_HYBRID_X86_ARM64) || defined(_M_ARM64EC) || __arm__ || __aarch64__
-    constexpr size_t XM_CACHE_LINE_SIZE = 128;
-#else
     constexpr size_t XM_CACHE_LINE_SIZE = 64;
-#endif
 
 
     /****************************************************************************
@@ -300,20 +320,20 @@ namespace DirectX
 #undef XMComparisonAnyOutOfBounds
 #endif
 
-    // Unit conversion
+     // Unit conversion
 
-    constexpr float XMConvertToRadians(float fDegrees) noexcept { return fDegrees * (XM_PI / 180.0f); }
-    constexpr float XMConvertToDegrees(float fRadians) noexcept { return fRadians * (180.0f / XM_PI); }
+    inline constexpr float XMConvertToRadians(float fDegrees) noexcept { return fDegrees * (XM_PI / 180.0f); }
+    inline constexpr float XMConvertToDegrees(float fRadians) noexcept { return fRadians * (180.0f / XM_PI); }
 
     // Condition register evaluation proceeding a recording (R) comparison
 
-    constexpr bool XMComparisonAllTrue(uint32_t CR) noexcept { return (CR & XM_CRMASK_CR6TRUE) == XM_CRMASK_CR6TRUE; }
-    constexpr bool XMComparisonAnyTrue(uint32_t CR) noexcept { return (CR & XM_CRMASK_CR6FALSE) != XM_CRMASK_CR6FALSE; }
-    constexpr bool XMComparisonAllFalse(uint32_t CR) noexcept { return (CR & XM_CRMASK_CR6FALSE) == XM_CRMASK_CR6FALSE; }
-    constexpr bool XMComparisonAnyFalse(uint32_t CR) noexcept { return (CR & XM_CRMASK_CR6TRUE) != XM_CRMASK_CR6TRUE; }
-    constexpr bool XMComparisonMixed(uint32_t CR) noexcept { return (CR & XM_CRMASK_CR6) == 0; }
-    constexpr bool XMComparisonAllInBounds(uint32_t CR) noexcept { return (CR & XM_CRMASK_CR6BOUNDS) == XM_CRMASK_CR6BOUNDS; }
-    constexpr bool XMComparisonAnyOutOfBounds(uint32_t CR) noexcept { return (CR & XM_CRMASK_CR6BOUNDS) != XM_CRMASK_CR6BOUNDS; }
+    inline constexpr bool XMComparisonAllTrue(uint32_t CR) noexcept { return (((CR)&XM_CRMASK_CR6TRUE) == XM_CRMASK_CR6TRUE); }
+    inline constexpr bool XMComparisonAnyTrue(uint32_t CR) noexcept { return (((CR)&XM_CRMASK_CR6FALSE) != XM_CRMASK_CR6FALSE); }
+    inline constexpr bool XMComparisonAllFalse(uint32_t CR) noexcept { return (((CR)&XM_CRMASK_CR6FALSE) == XM_CRMASK_CR6FALSE); }
+    inline constexpr bool XMComparisonAnyFalse(uint32_t CR) noexcept { return (((CR)&XM_CRMASK_CR6TRUE) != XM_CRMASK_CR6TRUE); }
+    inline constexpr bool XMComparisonMixed(uint32_t CR) noexcept { return (((CR)&XM_CRMASK_CR6) == 0); }
+    inline constexpr bool XMComparisonAllInBounds(uint32_t CR) noexcept { return (((CR)&XM_CRMASK_CR6BOUNDS) == XM_CRMASK_CR6BOUNDS); }
+    inline constexpr bool XMComparisonAnyOutOfBounds(uint32_t CR) noexcept { return (((CR)&XM_CRMASK_CR6BOUNDS) != XM_CRMASK_CR6BOUNDS); }
 
 
     /****************************************************************************
@@ -322,13 +342,14 @@ namespace DirectX
      *
      ****************************************************************************/
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4068 4201 4365 4324 4820)
      // C4068: ignore unknown pragmas
      // C4201: nonstandard extension used : nameless struct/union
      // C4365: Off by default noise
      // C4324/4820: padding warnings
-
+#endif
 #ifdef _PREFAST_
 #pragma prefast(push)
 #pragma prefast(disable : 25000, "FXMVECTOR is 16 bytes")
@@ -541,7 +562,7 @@ namespace DirectX
             float m10, float m11, float m12, float m13,
             float m20, float m21, float m22, float m23,
             float m30, float m31, float m32, float m33) noexcept;
-        explicit XMMATRIX(_In_reads_(16) const float* pArray) noexcept;
+        explicit XMMATRIX(_sal_In_reads_(16) const float* pArray) noexcept;
 
 #ifdef _XM_NO_INTRINSICS_
         float       operator() (size_t Row, size_t Column) const noexcept { return m[Row][Column]; }
@@ -582,13 +603,22 @@ namespace DirectX
         XMFLOAT2& operator=(XMFLOAT2&&) = default;
 
         constexpr XMFLOAT2(float _x, float _y) noexcept : x(_x), y(_y) {}
-        explicit XMFLOAT2(_In_reads_(2) const float* pArray)  noexcept : x(pArray[0]), y(pArray[1]) {}
+        explicit XMFLOAT2(_sal_In_reads_(2) const float* pArray)  noexcept : x(pArray[0]), y(pArray[1]) {}
     };
 
     // 2D Vector; 32 bit floating point components aligned on a 16 byte boundary
     XM_ALIGNED_STRUCT(16) XMFLOAT2A : public XMFLOAT2
     {
-        using XMFLOAT2::XMFLOAT2;
+        XMFLOAT2A() = default;
+
+        XMFLOAT2A(const XMFLOAT2A&) = default;
+        XMFLOAT2A& operator=(const XMFLOAT2A&) = default;
+
+        XMFLOAT2A(XMFLOAT2A&&) = default;
+        XMFLOAT2A& operator=(XMFLOAT2A&&) = default;
+
+        constexpr XMFLOAT2A(float _x, float _y) noexcept : XMFLOAT2(_x, _y) {}
+        explicit XMFLOAT2A(_sal_In_reads_(2) const float* pArray) noexcept : XMFLOAT2(pArray) {}
     };
 
     //------------------------------------------------------------------------------
@@ -607,7 +637,7 @@ namespace DirectX
         XMINT2& operator=(XMINT2&&) = default;
 
         constexpr XMINT2(int32_t _x, int32_t _y) noexcept : x(_x), y(_y) {}
-        explicit XMINT2(_In_reads_(2) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]) {}
+        explicit XMINT2(_sal_In_reads_(2) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]) {}
     };
 
     // 2D Vector; 32 bit unsigned integer components
@@ -625,7 +655,7 @@ namespace DirectX
         XMUINT2& operator=(XMUINT2&&) = default;
 
         constexpr XMUINT2(uint32_t _x, uint32_t _y) noexcept : x(_x), y(_y) {}
-        explicit XMUINT2(_In_reads_(2) const uint32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]) {}
+        explicit XMUINT2(_sal_In_reads_(2) const uint32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]) {}
     };
 
     //------------------------------------------------------------------------------
@@ -645,13 +675,22 @@ namespace DirectX
         XMFLOAT3& operator=(XMFLOAT3&&) = default;
 
         constexpr XMFLOAT3(float _x, float _y, float _z) noexcept : x(_x), y(_y), z(_z) {}
-        explicit XMFLOAT3(_In_reads_(3) const float* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]) {}
+        explicit XMFLOAT3(_sal_In_reads_(3) const float* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]) {}
     };
 
     // 3D Vector; 32 bit floating point components aligned on a 16 byte boundary
     XM_ALIGNED_STRUCT(16) XMFLOAT3A : public XMFLOAT3
     {
-        using XMFLOAT3::XMFLOAT3;
+        XMFLOAT3A() = default;
+
+        XMFLOAT3A(const XMFLOAT3A&) = default;
+        XMFLOAT3A& operator=(const XMFLOAT3A&) = default;
+
+        XMFLOAT3A(XMFLOAT3A&&) = default;
+        XMFLOAT3A& operator=(XMFLOAT3A&&) = default;
+
+        constexpr XMFLOAT3A(float _x, float _y, float _z) noexcept : XMFLOAT3(_x, _y, _z) {}
+        explicit XMFLOAT3A(_sal_In_reads_(3) const float* pArray) noexcept : XMFLOAT3(pArray) {}
     };
 
     //------------------------------------------------------------------------------
@@ -671,7 +710,7 @@ namespace DirectX
         XMINT3& operator=(XMINT3&&) = default;
 
         constexpr XMINT3(int32_t _x, int32_t _y, int32_t _z) noexcept : x(_x), y(_y), z(_z) {}
-        explicit XMINT3(_In_reads_(3) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]) {}
+        explicit XMINT3(_sal_In_reads_(3) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]) {}
     };
 
     // 3D Vector; 32 bit unsigned integer components
@@ -690,7 +729,7 @@ namespace DirectX
         XMUINT3& operator=(XMUINT3&&) = default;
 
         constexpr XMUINT3(uint32_t _x, uint32_t _y, uint32_t _z) noexcept : x(_x), y(_y), z(_z) {}
-        explicit XMUINT3(_In_reads_(3) const uint32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]) {}
+        explicit XMUINT3(_sal_In_reads_(3) const uint32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]) {}
     };
 
     //------------------------------------------------------------------------------
@@ -711,13 +750,22 @@ namespace DirectX
         XMFLOAT4& operator=(XMFLOAT4&&) = default;
 
         constexpr XMFLOAT4(float _x, float _y, float _z, float _w) noexcept : x(_x), y(_y), z(_z), w(_w) {}
-        explicit XMFLOAT4(_In_reads_(4) const float* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]), w(pArray[3]) {}
+        explicit XMFLOAT4(_sal_In_reads_(4) const float* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]), w(pArray[3]) {}
     };
 
     // 4D Vector; 32 bit floating point components aligned on a 16 byte boundary
     XM_ALIGNED_STRUCT(16) XMFLOAT4A : public XMFLOAT4
     {
-        using XMFLOAT4::XMFLOAT4;
+        XMFLOAT4A() = default;
+
+        XMFLOAT4A(const XMFLOAT4A&) = default;
+        XMFLOAT4A& operator=(const XMFLOAT4A&) = default;
+
+        XMFLOAT4A(XMFLOAT4A&&) = default;
+        XMFLOAT4A& operator=(XMFLOAT4A&&) = default;
+
+        constexpr XMFLOAT4A(float _x, float _y, float _z, float _w) noexcept : XMFLOAT4(_x, _y, _z, _w) {}
+        explicit XMFLOAT4A(_sal_In_reads_(4) const float* pArray) noexcept : XMFLOAT4(pArray) {}
     };
 
     //------------------------------------------------------------------------------
@@ -738,7 +786,7 @@ namespace DirectX
         XMINT4& operator=(XMINT4&&) = default;
 
         constexpr XMINT4(int32_t _x, int32_t _y, int32_t _z, int32_t _w) noexcept : x(_x), y(_y), z(_z), w(_w) {}
-        explicit XMINT4(_In_reads_(4) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]), w(pArray[3]) {}
+        explicit XMINT4(_sal_In_reads_(4) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]), w(pArray[3]) {}
     };
 
     // 4D Vector; 32 bit unsigned integer components
@@ -758,7 +806,7 @@ namespace DirectX
         XMUINT4& operator=(XMUINT4&&) = default;
 
         constexpr XMUINT4(uint32_t _x, uint32_t _y, uint32_t _z, uint32_t _w) noexcept : x(_x), y(_y), z(_z), w(_w) {}
-        explicit XMUINT4(_In_reads_(4) const uint32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]), w(pArray[3]) {}
+        explicit XMUINT4(_sal_In_reads_(4) const uint32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]), w(pArray[3]) {}
     };
 
 #ifdef __clang__
@@ -796,7 +844,7 @@ namespace DirectX
             : _11(m00), _12(m01), _13(m02),
             _21(m10), _22(m11), _23(m12),
             _31(m20), _32(m21), _33(m22) {}
-        explicit XMFLOAT3X3(_In_reads_(9) const float* pArray) noexcept;
+        explicit XMFLOAT3X3(_sal_In_reads_(9) const float* pArray) noexcept;
 
         float       operator() (size_t Row, size_t Column) const  noexcept { return m[Row][Column]; }
         float& operator() (size_t Row, size_t Column) noexcept { return m[Row][Column]; }
@@ -835,7 +883,7 @@ namespace DirectX
             _21(m10), _22(m11), _23(m12),
             _31(m20), _32(m21), _33(m22),
             _41(m30), _42(m31), _43(m32) {}
-        explicit XMFLOAT4X3(_In_reads_(12) const float* pArray) noexcept;
+        explicit XMFLOAT4X3(_sal_In_reads_(12) const float* pArray) noexcept;
 
         float       operator() (size_t Row, size_t Column) const  noexcept { return m[Row][Column]; }
         float& operator() (size_t Row, size_t Column) noexcept { return m[Row][Column]; }
@@ -844,7 +892,20 @@ namespace DirectX
     // 4x3 Row-major Matrix: 32 bit floating point components aligned on a 16 byte boundary
     XM_ALIGNED_STRUCT(16) XMFLOAT4X3A : public XMFLOAT4X3
     {
-        using XMFLOAT4X3::XMFLOAT4X3;
+        XMFLOAT4X3A() = default;
+
+        XMFLOAT4X3A(const XMFLOAT4X3A&) = default;
+        XMFLOAT4X3A& operator=(const XMFLOAT4X3A&) = default;
+
+        XMFLOAT4X3A(XMFLOAT4X3A&&) = default;
+        XMFLOAT4X3A& operator=(XMFLOAT4X3A&&) = default;
+
+        constexpr XMFLOAT4X3A(float m00, float m01, float m02,
+            float m10, float m11, float m12,
+            float m20, float m21, float m22,
+            float m30, float m31, float m32)  noexcept :
+            XMFLOAT4X3(m00, m01, m02, m10, m11, m12, m20, m21, m22, m30, m31, m32) {}
+        explicit XMFLOAT4X3A(_sal_In_reads_(12) const float* pArray)  noexcept : XMFLOAT4X3(pArray) {}
     };
 
     //------------------------------------------------------------------------------
@@ -877,7 +938,7 @@ namespace DirectX
             : _11(m00), _12(m01), _13(m02), _14(m03),
             _21(m10), _22(m11), _23(m12), _24(m13),
             _31(m20), _32(m21), _33(m22), _34(m23) {}
-        explicit XMFLOAT3X4(_In_reads_(12) const float* pArray) noexcept;
+        explicit XMFLOAT3X4(_sal_In_reads_(12) const float* pArray) noexcept;
 
         float       operator() (size_t Row, size_t Column) const noexcept { return m[Row][Column]; }
         float& operator() (size_t Row, size_t Column) noexcept { return m[Row][Column]; }
@@ -886,7 +947,19 @@ namespace DirectX
     // 3x4 Column-major Matrix: 32 bit floating point components aligned on a 16 byte boundary
     XM_ALIGNED_STRUCT(16) XMFLOAT3X4A : public XMFLOAT3X4
     {
-        using XMFLOAT3X4::XMFLOAT3X4;
+        XMFLOAT3X4A() = default;
+
+        XMFLOAT3X4A(const XMFLOAT3X4A&) = default;
+        XMFLOAT3X4A& operator=(const XMFLOAT3X4A&) = default;
+
+        XMFLOAT3X4A(XMFLOAT3X4A&&) = default;
+        XMFLOAT3X4A& operator=(XMFLOAT3X4A&&) = default;
+
+        constexpr XMFLOAT3X4A(float m00, float m01, float m02, float m03,
+            float m10, float m11, float m12, float m13,
+            float m20, float m21, float m22, float m23)  noexcept :
+            XMFLOAT3X4(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23) {}
+        explicit XMFLOAT3X4A(_sal_In_reads_(12) const float* pArray) noexcept : XMFLOAT3X4(pArray) {}
     };
 
     //------------------------------------------------------------------------------
@@ -921,7 +994,7 @@ namespace DirectX
             _21(m10), _22(m11), _23(m12), _24(m13),
             _31(m20), _32(m21), _33(m22), _34(m23),
             _41(m30), _42(m31), _43(m32), _44(m33) {}
-        explicit XMFLOAT4X4(_In_reads_(16) const float* pArray) noexcept;
+        explicit XMFLOAT4X4(_sal_In_reads_(16) const float* pArray) noexcept;
 
         float       operator() (size_t Row, size_t Column) const noexcept { return m[Row][Column]; }
         float& operator() (size_t Row, size_t Column) noexcept { return m[Row][Column]; }
@@ -930,7 +1003,20 @@ namespace DirectX
     // 4x4 Matrix: 32 bit floating point components aligned on a 16 byte boundary
     XM_ALIGNED_STRUCT(16) XMFLOAT4X4A : public XMFLOAT4X4
     {
-        using XMFLOAT4X4::XMFLOAT4X4;
+        XMFLOAT4X4A() = default;
+
+        XMFLOAT4X4A(const XMFLOAT4X4A&) = default;
+        XMFLOAT4X4A& operator=(const XMFLOAT4X4A&) = default;
+
+        XMFLOAT4X4A(XMFLOAT4X4A&&) = default;
+        XMFLOAT4X4A& operator=(XMFLOAT4X4A&&) = default;
+
+        constexpr XMFLOAT4X4A(float m00, float m01, float m02, float m03,
+            float m10, float m11, float m12, float m13,
+            float m20, float m21, float m22, float m23,
+            float m30, float m31, float m32, float m33) noexcept
+            : XMFLOAT4X4(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33) {}
+        explicit XMFLOAT4X4A(_sal_In_reads_(16) const float* pArray) noexcept : XMFLOAT4X4(pArray) {}
     };
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -943,7 +1029,9 @@ namespace DirectX
 #pragma prefast(pop)
 #endif
 
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 /****************************************************************************
  *
@@ -972,37 +1060,37 @@ namespace DirectX
      *
      ****************************************************************************/
 
-    XMVECTOR    XM_CALLCONV     XMLoadInt(_In_ const uint32_t* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadFloat(_In_ const float* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadInt(_sal_In_ const uint32_t* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadFloat(_sal_In_ const float* pSource) noexcept;
 
-    XMVECTOR    XM_CALLCONV     XMLoadInt2(_In_reads_(2) const uint32_t* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadInt2A(_In_reads_(2) const uint32_t* PSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadFloat2(_In_ const XMFLOAT2* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadFloat2A(_In_ const XMFLOAT2A* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadSInt2(_In_ const XMINT2* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadUInt2(_In_ const XMUINT2* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadInt2(_sal_In_reads_(2) const uint32_t* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadInt2A(_sal_In_reads_(2) const uint32_t* PSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadFloat2(_sal_In_ const XMFLOAT2* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadFloat2A(_sal_In_ const XMFLOAT2A* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadSInt2(_sal_In_ const XMINT2* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadUInt2(_sal_In_ const XMUINT2* pSource) noexcept;
 
-    XMVECTOR    XM_CALLCONV     XMLoadInt3(_In_reads_(3) const uint32_t* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadInt3A(_In_reads_(3) const uint32_t* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadFloat3(_In_ const XMFLOAT3* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadFloat3A(_In_ const XMFLOAT3A* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadSInt3(_In_ const XMINT3* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadUInt3(_In_ const XMUINT3* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadInt3(_sal_In_reads_(3) const uint32_t* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadInt3A(_sal_In_reads_(3) const uint32_t* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadFloat3(_sal_In_ const XMFLOAT3* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadFloat3A(_sal_In_ const XMFLOAT3A* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadSInt3(_sal_In_ const XMINT3* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadUInt3(_sal_In_ const XMUINT3* pSource) noexcept;
 
-    XMVECTOR    XM_CALLCONV     XMLoadInt4(_In_reads_(4) const uint32_t* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadInt4A(_In_reads_(4) const uint32_t* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadFloat4(_In_ const XMFLOAT4* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadFloat4A(_In_ const XMFLOAT4A* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadSInt4(_In_ const XMINT4* pSource) noexcept;
-    XMVECTOR    XM_CALLCONV     XMLoadUInt4(_In_ const XMUINT4* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadInt4(_sal_In_reads_(4) const uint32_t* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadInt4A(_sal_In_reads_(4) const uint32_t* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadFloat4(_sal_In_ const XMFLOAT4* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadFloat4A(_sal_In_ const XMFLOAT4A* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadSInt4(_sal_In_ const XMINT4* pSource) noexcept;
+    XMVECTOR    XM_CALLCONV     XMLoadUInt4(_sal_In_ const XMUINT4* pSource) noexcept;
 
-    XMMATRIX    XM_CALLCONV     XMLoadFloat3x3(_In_ const XMFLOAT3X3* pSource) noexcept;
-    XMMATRIX    XM_CALLCONV     XMLoadFloat4x3(_In_ const XMFLOAT4X3* pSource) noexcept;
-    XMMATRIX    XM_CALLCONV     XMLoadFloat4x3A(_In_ const XMFLOAT4X3A* pSource) noexcept;
-    XMMATRIX    XM_CALLCONV     XMLoadFloat3x4(_In_ const XMFLOAT3X4* pSource) noexcept;
-    XMMATRIX    XM_CALLCONV     XMLoadFloat3x4A(_In_ const XMFLOAT3X4A* pSource) noexcept;
-    XMMATRIX    XM_CALLCONV     XMLoadFloat4x4(_In_ const XMFLOAT4X4* pSource) noexcept;
-    XMMATRIX    XM_CALLCONV     XMLoadFloat4x4A(_In_ const XMFLOAT4X4A* pSource) noexcept;
+    XMMATRIX    XM_CALLCONV     XMLoadFloat3x3(_sal_In_ const XMFLOAT3X3* pSource) noexcept;
+    XMMATRIX    XM_CALLCONV     XMLoadFloat4x3(_sal_In_ const XMFLOAT4X3* pSource) noexcept;
+    XMMATRIX    XM_CALLCONV     XMLoadFloat4x3A(_sal_In_ const XMFLOAT4X3A* pSource) noexcept;
+    XMMATRIX    XM_CALLCONV     XMLoadFloat3x4(_sal_In_ const XMFLOAT3X4* pSource) noexcept;
+    XMMATRIX    XM_CALLCONV     XMLoadFloat3x4A(_sal_In_ const XMFLOAT3X4A* pSource) noexcept;
+    XMMATRIX    XM_CALLCONV     XMLoadFloat4x4(_sal_In_ const XMFLOAT4X4* pSource) noexcept;
+    XMMATRIX    XM_CALLCONV     XMLoadFloat4x4A(_sal_In_ const XMFLOAT4X4A* pSource) noexcept;
 
     /****************************************************************************
      *
@@ -1010,37 +1098,37 @@ namespace DirectX
      *
      ****************************************************************************/
 
-    void        XM_CALLCONV     XMStoreInt(_Out_ uint32_t* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreFloat(_Out_ float* pDestination, _In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreInt(_sal_Out_ uint32_t* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreFloat(_sal_Out_ float* pDestination, _sal_In_ FXMVECTOR V) noexcept;
 
-    void        XM_CALLCONV     XMStoreInt2(_Out_writes_(2) uint32_t* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreInt2A(_Out_writes_(2) uint32_t* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreFloat2(_Out_ XMFLOAT2* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreFloat2A(_Out_ XMFLOAT2A* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreSInt2(_Out_ XMINT2* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreUInt2(_Out_ XMUINT2* pDestination, _In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreInt2(_sal_Out_writes_(2) uint32_t* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreInt2A(_sal_Out_writes_(2) uint32_t* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreFloat2(_sal_Out_ XMFLOAT2* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreFloat2A(_sal_Out_ XMFLOAT2A* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreSInt2(_sal_Out_ XMINT2* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreUInt2(_sal_Out_ XMUINT2* pDestination, _sal_In_ FXMVECTOR V) noexcept;
 
-    void        XM_CALLCONV     XMStoreInt3(_Out_writes_(3) uint32_t* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreInt3A(_Out_writes_(3) uint32_t* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreFloat3(_Out_ XMFLOAT3* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreFloat3A(_Out_ XMFLOAT3A* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreSInt3(_Out_ XMINT3* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreUInt3(_Out_ XMUINT3* pDestination, _In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreInt3(_sal_Out_writes_(3) uint32_t* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreInt3A(_sal_Out_writes_(3) uint32_t* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreFloat3(_sal_Out_ XMFLOAT3* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreFloat3A(_sal_Out_ XMFLOAT3A* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreSInt3(_sal_Out_ XMINT3* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreUInt3(_sal_Out_ XMUINT3* pDestination, _sal_In_ FXMVECTOR V) noexcept;
 
-    void        XM_CALLCONV     XMStoreInt4(_Out_writes_(4) uint32_t* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreInt4A(_Out_writes_(4) uint32_t* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreFloat4(_Out_ XMFLOAT4* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreFloat4A(_Out_ XMFLOAT4A* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreSInt4(_Out_ XMINT4* pDestination, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMStoreUInt4(_Out_ XMUINT4* pDestination, _In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreInt4(_sal_Out_writes_(4) uint32_t* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreInt4A(_sal_Out_writes_(4) uint32_t* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreFloat4(_sal_Out_ XMFLOAT4* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreFloat4A(_sal_Out_ XMFLOAT4A* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreSInt4(_sal_Out_ XMINT4* pDestination, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMStoreUInt4(_sal_Out_ XMUINT4* pDestination, _sal_In_ FXMVECTOR V) noexcept;
 
-    void        XM_CALLCONV     XMStoreFloat3x3(_Out_ XMFLOAT3X3* pDestination, _In_ FXMMATRIX M) noexcept;
-    void        XM_CALLCONV     XMStoreFloat4x3(_Out_ XMFLOAT4X3* pDestination, _In_ FXMMATRIX M) noexcept;
-    void        XM_CALLCONV     XMStoreFloat4x3A(_Out_ XMFLOAT4X3A* pDestination, _In_ FXMMATRIX M) noexcept;
-    void        XM_CALLCONV     XMStoreFloat3x4(_Out_ XMFLOAT3X4* pDestination, _In_ FXMMATRIX M) noexcept;
-    void        XM_CALLCONV     XMStoreFloat3x4A(_Out_ XMFLOAT3X4A* pDestination, _In_ FXMMATRIX M) noexcept;
-    void        XM_CALLCONV     XMStoreFloat4x4(_Out_ XMFLOAT4X4* pDestination, _In_ FXMMATRIX M) noexcept;
-    void        XM_CALLCONV     XMStoreFloat4x4A(_Out_ XMFLOAT4X4A* pDestination, _In_ FXMMATRIX M) noexcept;
+    void        XM_CALLCONV     XMStoreFloat3x3(_sal_Out_ XMFLOAT3X3* pDestination, _sal_In_ FXMMATRIX M) noexcept;
+    void        XM_CALLCONV     XMStoreFloat4x3(_sal_Out_ XMFLOAT4X3* pDestination, _sal_In_ FXMMATRIX M) noexcept;
+    void        XM_CALLCONV     XMStoreFloat4x3A(_sal_Out_ XMFLOAT4X3A* pDestination, _sal_In_ FXMMATRIX M) noexcept;
+    void        XM_CALLCONV     XMStoreFloat3x4(_sal_Out_ XMFLOAT3X4* pDestination, _sal_In_ FXMMATRIX M) noexcept;
+    void        XM_CALLCONV     XMStoreFloat3x4A(_sal_Out_ XMFLOAT3X4A* pDestination, _sal_In_ FXMMATRIX M) noexcept;
+    void        XM_CALLCONV     XMStoreFloat4x4(_sal_Out_ XMFLOAT4X4* pDestination, _sal_In_ FXMMATRIX M) noexcept;
+    void        XM_CALLCONV     XMStoreFloat4x4A(_sal_Out_ XMFLOAT4X4A* pDestination, _sal_In_ FXMMATRIX M) noexcept;
 
     /****************************************************************************
      *
@@ -1052,9 +1140,9 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMVectorSet(float x, float y, float z, float w) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorSetInt(uint32_t x, uint32_t y, uint32_t z, uint32_t w) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorReplicate(float Value) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorReplicatePtr(_In_ const float* pValue) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorReplicatePtr(_sal_In_ const float* pValue) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorReplicateInt(uint32_t Value) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorReplicateIntPtr(_In_ const uint32_t* pValue) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorReplicateIntPtr(_sal_In_ const uint32_t* pValue) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorTrueInt() noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorFalseInt() noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorSplatX(FXMVECTOR V) noexcept;
@@ -1073,11 +1161,11 @@ namespace DirectX
     float       XM_CALLCONV     XMVectorGetZ(FXMVECTOR V) noexcept;
     float       XM_CALLCONV     XMVectorGetW(FXMVECTOR V) noexcept;
 
-    void        XM_CALLCONV     XMVectorGetByIndexPtr(_Out_ float* f, _In_ FXMVECTOR V, _In_ size_t i) noexcept;
-    void        XM_CALLCONV     XMVectorGetXPtr(_Out_ float* x, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMVectorGetYPtr(_Out_ float* y, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMVectorGetZPtr(_Out_ float* z, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMVectorGetWPtr(_Out_ float* w, _In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorGetByIndexPtr(_sal_Out_ float* f, _sal_In_ FXMVECTOR V, _sal_In_ size_t i) noexcept;
+    void        XM_CALLCONV     XMVectorGetXPtr(_sal_Out_ float* x, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorGetYPtr(_sal_Out_ float* y, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorGetZPtr(_sal_Out_ float* z, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorGetWPtr(_sal_Out_ float* w, _sal_In_ FXMVECTOR V) noexcept;
 
     uint32_t    XM_CALLCONV     XMVectorGetIntByIndex(FXMVECTOR V, size_t i) noexcept;
     uint32_t    XM_CALLCONV     XMVectorGetIntX(FXMVECTOR V) noexcept;
@@ -1085,11 +1173,11 @@ namespace DirectX
     uint32_t    XM_CALLCONV     XMVectorGetIntZ(FXMVECTOR V) noexcept;
     uint32_t    XM_CALLCONV     XMVectorGetIntW(FXMVECTOR V) noexcept;
 
-    void        XM_CALLCONV     XMVectorGetIntByIndexPtr(_Out_ uint32_t* x, _In_ FXMVECTOR V, _In_ size_t i) noexcept;
-    void        XM_CALLCONV     XMVectorGetIntXPtr(_Out_ uint32_t* x, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMVectorGetIntYPtr(_Out_ uint32_t* y, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMVectorGetIntZPtr(_Out_ uint32_t* z, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMVectorGetIntWPtr(_Out_ uint32_t* w, _In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorGetIntByIndexPtr(_sal_Out_ uint32_t* x, _sal_In_ FXMVECTOR V, _sal_In_ size_t i) noexcept;
+    void        XM_CALLCONV     XMVectorGetIntXPtr(_sal_Out_ uint32_t* x, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorGetIntYPtr(_sal_Out_ uint32_t* y, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorGetIntZPtr(_sal_Out_ uint32_t* z, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorGetIntWPtr(_sal_Out_ uint32_t* w, _sal_In_ FXMVECTOR V) noexcept;
 
     XMVECTOR    XM_CALLCONV     XMVectorSetByIndex(FXMVECTOR V, float f, size_t i) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorSetX(FXMVECTOR V, float x) noexcept;
@@ -1097,11 +1185,11 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMVectorSetZ(FXMVECTOR V, float z) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorSetW(FXMVECTOR V, float w) noexcept;
 
-    XMVECTOR    XM_CALLCONV     XMVectorSetByIndexPtr(_In_ FXMVECTOR V, _In_ const float* f, _In_ size_t i) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorSetXPtr(_In_ FXMVECTOR V, _In_ const float* x) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorSetYPtr(_In_ FXMVECTOR V, _In_ const float* y) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorSetZPtr(_In_ FXMVECTOR V, _In_ const float* z) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorSetWPtr(_In_ FXMVECTOR V, _In_ const float* w) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetByIndexPtr(_sal_In_ FXMVECTOR V, _sal_In_ const float* f, _sal_In_ size_t i) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetXPtr(_sal_In_ FXMVECTOR V, _sal_In_ const float* x) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetYPtr(_sal_In_ FXMVECTOR V, _sal_In_ const float* y) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetZPtr(_sal_In_ FXMVECTOR V, _sal_In_ const float* z) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetWPtr(_sal_In_ FXMVECTOR V, _sal_In_ const float* w) noexcept;
 
     XMVECTOR    XM_CALLCONV     XMVectorSetIntByIndex(FXMVECTOR V, uint32_t x, size_t i) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorSetIntX(FXMVECTOR V, uint32_t x) noexcept;
@@ -1109,11 +1197,11 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMVectorSetIntZ(FXMVECTOR V, uint32_t z) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorSetIntW(FXMVECTOR V, uint32_t w) noexcept;
 
-    XMVECTOR    XM_CALLCONV     XMVectorSetIntByIndexPtr(_In_ FXMVECTOR V, _In_ const uint32_t* x, _In_ size_t i) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorSetIntXPtr(_In_ FXMVECTOR V, _In_ const uint32_t* x) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorSetIntYPtr(_In_ FXMVECTOR V, _In_ const uint32_t* y) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorSetIntZPtr(_In_ FXMVECTOR V, _In_ const uint32_t* z) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorSetIntWPtr(_In_ FXMVECTOR V, _In_ const uint32_t* w) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetIntByIndexPtr(_sal_In_ FXMVECTOR V, _sal_In_ const uint32_t* x, _sal_In_ size_t i) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetIntXPtr(_sal_In_ FXMVECTOR V, _sal_In_ const uint32_t* x) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetIntYPtr(_sal_In_ FXMVECTOR V, _sal_In_ const uint32_t* y) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetIntZPtr(_sal_In_ FXMVECTOR V, _sal_In_ const uint32_t* z) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorSetIntWPtr(_sal_In_ FXMVECTOR V, _sal_In_ const uint32_t* w) noexcept;
 
 #if defined(__XNAMATH_H__) && defined(XMVectorSwizzle)
 #undef XMVectorSwizzle
@@ -1140,20 +1228,20 @@ namespace DirectX
         uint32_t Select0, uint32_t Select1, uint32_t Select2, uint32_t Select3) noexcept;
 
     XMVECTOR    XM_CALLCONV     XMVectorEqual(FXMVECTOR V1, FXMVECTOR V2) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorEqualR(_Out_ uint32_t* pCR, _In_ FXMVECTOR V1, _In_ FXMVECTOR V2) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorEqualR(_sal_Out_ uint32_t* pCR, _sal_In_ FXMVECTOR V1, _sal_In_ FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorEqualInt(FXMVECTOR V1, FXMVECTOR V2) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorEqualIntR(_Out_ uint32_t* pCR, _In_ FXMVECTOR V, _In_ FXMVECTOR V2) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorEqualIntR(_sal_Out_ uint32_t* pCR, _sal_In_ FXMVECTOR V, _sal_In_ FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorNearEqual(FXMVECTOR V1, FXMVECTOR V2, FXMVECTOR Epsilon) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorNotEqual(FXMVECTOR V1, FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorNotEqualInt(FXMVECTOR V1, FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorGreater(FXMVECTOR V1, FXMVECTOR V2) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorGreaterR(_Out_ uint32_t* pCR, _In_ FXMVECTOR V1, _In_ FXMVECTOR V2) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorGreaterR(_sal_Out_ uint32_t* pCR, _sal_In_ FXMVECTOR V1, _sal_In_ FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorGreaterOrEqual(FXMVECTOR V1, FXMVECTOR V2) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorGreaterOrEqualR(_Out_ uint32_t* pCR, _In_ FXMVECTOR V1, _In_ FXMVECTOR V2) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorGreaterOrEqualR(_sal_Out_ uint32_t* pCR, _sal_In_ FXMVECTOR V1, _sal_In_ FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorLess(FXMVECTOR V1, FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorLessOrEqual(FXMVECTOR V1, FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorInBounds(FXMVECTOR V, FXMVECTOR Bounds) noexcept;
-    XMVECTOR    XM_CALLCONV     XMVectorInBoundsR(_Out_ uint32_t* pCR, _In_ FXMVECTOR V, _In_ FXMVECTOR Bounds) noexcept;
+    XMVECTOR    XM_CALLCONV     XMVectorInBoundsR(_sal_Out_ uint32_t* pCR, _sal_In_ FXMVECTOR V, _sal_In_ FXMVECTOR Bounds) noexcept;
 
     XMVECTOR    XM_CALLCONV     XMVectorIsNaN(FXMVECTOR V) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorIsInfinite(FXMVECTOR V) noexcept;
@@ -1206,8 +1294,8 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMVectorSinEst(FXMVECTOR V) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorCos(FXMVECTOR V) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorCosEst(FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMVectorSinCos(_Out_ XMVECTOR* pSin, _Out_ XMVECTOR* pCos, _In_ FXMVECTOR V) noexcept;
-    void        XM_CALLCONV     XMVectorSinCosEst(_Out_ XMVECTOR* pSin, _Out_ XMVECTOR* pCos, _In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorSinCos(_sal_Out_ XMVECTOR* pSin, _sal_Out_ XMVECTOR* pCos, _sal_In_ FXMVECTOR V) noexcept;
+    void        XM_CALLCONV     XMVectorSinCosEst(_sal_Out_ XMVECTOR* pSin, _sal_Out_ XMVECTOR* pCos, _sal_In_ FXMVECTOR V) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorTan(FXMVECTOR V) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorTanEst(FXMVECTOR V) noexcept;
     XMVECTOR    XM_CALLCONV     XMVectorSinH(FXMVECTOR V) noexcept;
@@ -1275,20 +1363,20 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMVector2LinePointDistance(FXMVECTOR LinePoint1, FXMVECTOR LinePoint2, FXMVECTOR Point) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector2IntersectLine(FXMVECTOR Line1Point1, FXMVECTOR Line1Point2, FXMVECTOR Line2Point1, GXMVECTOR Line2Point2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector2Transform(FXMVECTOR V, FXMMATRIX M) noexcept;
-    XMFLOAT4* XM_CALLCONV     XMVector2TransformStream(_Out_writes_bytes_(sizeof(XMFLOAT4) + OutputStride * (VectorCount - 1)) XMFLOAT4* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT2) + InputStride * (VectorCount - 1)) const XMFLOAT2* pInputStream,
-        _In_ size_t InputStride, _In_ size_t VectorCount, _In_ FXMMATRIX M) noexcept;
+    XMFLOAT4* XM_CALLCONV     XMVector2TransformStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT4) + OutputStride * (VectorCount - 1)) XMFLOAT4* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT2) + InputStride * (VectorCount - 1)) const XMFLOAT2* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t VectorCount, _sal_In_ FXMMATRIX M) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector2TransformCoord(FXMVECTOR V, FXMMATRIX M) noexcept;
-    XMFLOAT2* XM_CALLCONV     XMVector2TransformCoordStream(_Out_writes_bytes_(sizeof(XMFLOAT2) + OutputStride * (VectorCount - 1)) XMFLOAT2* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT2) + InputStride * (VectorCount - 1)) const XMFLOAT2* pInputStream,
-        _In_ size_t InputStride, _In_ size_t VectorCount, _In_ FXMMATRIX M) noexcept;
+    XMFLOAT2* XM_CALLCONV     XMVector2TransformCoordStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT2) + OutputStride * (VectorCount - 1)) XMFLOAT2* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT2) + InputStride * (VectorCount - 1)) const XMFLOAT2* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t VectorCount, _sal_In_ FXMMATRIX M) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector2TransformNormal(FXMVECTOR V, FXMMATRIX M) noexcept;
-    XMFLOAT2* XM_CALLCONV     XMVector2TransformNormalStream(_Out_writes_bytes_(sizeof(XMFLOAT2) + OutputStride * (VectorCount - 1)) XMFLOAT2* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT2) + InputStride * (VectorCount - 1)) const XMFLOAT2* pInputStream,
-        _In_ size_t InputStride, _In_ size_t VectorCount, _In_ FXMMATRIX M) noexcept;
+    XMFLOAT2* XM_CALLCONV     XMVector2TransformNormalStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT2) + OutputStride * (VectorCount - 1)) XMFLOAT2* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT2) + InputStride * (VectorCount - 1)) const XMFLOAT2* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t VectorCount, _sal_In_ FXMMATRIX M) noexcept;
 
     /****************************************************************************
      *
@@ -1333,40 +1421,40 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMVector3AngleBetweenNormals(FXMVECTOR N1, FXMVECTOR N2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector3AngleBetweenVectors(FXMVECTOR V1, FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector3LinePointDistance(FXMVECTOR LinePoint1, FXMVECTOR LinePoint2, FXMVECTOR Point) noexcept;
-    void        XM_CALLCONV     XMVector3ComponentsFromNormal(_Out_ XMVECTOR* pParallel, _Out_ XMVECTOR* pPerpendicular, _In_ FXMVECTOR V, _In_ FXMVECTOR Normal) noexcept;
+    void        XM_CALLCONV     XMVector3ComponentsFromNormal(_sal_Out_ XMVECTOR* pParallel, _sal_Out_ XMVECTOR* pPerpendicular, _sal_In_ FXMVECTOR V, _sal_In_ FXMVECTOR Normal) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector3Rotate(FXMVECTOR V, FXMVECTOR RotationQuaternion) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector3InverseRotate(FXMVECTOR V, FXMVECTOR RotationQuaternion) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector3Transform(FXMVECTOR V, FXMMATRIX M) noexcept;
-    XMFLOAT4* XM_CALLCONV     XMVector3TransformStream(_Out_writes_bytes_(sizeof(XMFLOAT4) + OutputStride * (VectorCount - 1)) XMFLOAT4* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
-        _In_ size_t InputStride, _In_ size_t VectorCount, _In_ FXMMATRIX M) noexcept;
+    XMFLOAT4* XM_CALLCONV     XMVector3TransformStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT4) + OutputStride * (VectorCount - 1)) XMFLOAT4* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t VectorCount, _sal_In_ FXMMATRIX M) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector3TransformCoord(FXMVECTOR V, FXMMATRIX M) noexcept;
-    XMFLOAT3* XM_CALLCONV     XMVector3TransformCoordStream(_Out_writes_bytes_(sizeof(XMFLOAT3) + OutputStride * (VectorCount - 1)) XMFLOAT3* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
-        _In_ size_t InputStride, _In_ size_t VectorCount, _In_ FXMMATRIX M) noexcept;
+    XMFLOAT3* XM_CALLCONV     XMVector3TransformCoordStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT3) + OutputStride * (VectorCount - 1)) XMFLOAT3* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t VectorCount, _sal_In_ FXMMATRIX M) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector3TransformNormal(FXMVECTOR V, FXMMATRIX M) noexcept;
-    XMFLOAT3* XM_CALLCONV     XMVector3TransformNormalStream(_Out_writes_bytes_(sizeof(XMFLOAT3) + OutputStride * (VectorCount - 1)) XMFLOAT3* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
-        _In_ size_t InputStride, _In_ size_t VectorCount, _In_ FXMMATRIX M) noexcept;
+    XMFLOAT3* XM_CALLCONV     XMVector3TransformNormalStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT3) + OutputStride * (VectorCount - 1)) XMFLOAT3* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t VectorCount, _sal_In_ FXMMATRIX M) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector3Project(FXMVECTOR V, float ViewportX, float ViewportY, float ViewportWidth, float ViewportHeight, float ViewportMinZ, float ViewportMaxZ,
         FXMMATRIX Projection, CXMMATRIX View, CXMMATRIX World) noexcept;
-    XMFLOAT3* XM_CALLCONV     XMVector3ProjectStream(_Out_writes_bytes_(sizeof(XMFLOAT3) + OutputStride * (VectorCount - 1)) XMFLOAT3* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
-        _In_ size_t InputStride, _In_ size_t VectorCount,
-        _In_ float ViewportX, _In_ float ViewportY, _In_ float ViewportWidth, _In_ float ViewportHeight, _In_ float ViewportMinZ, _In_ float ViewportMaxZ,
-        _In_ FXMMATRIX Projection, _In_ CXMMATRIX View, _In_ CXMMATRIX World) noexcept;
+    XMFLOAT3* XM_CALLCONV     XMVector3ProjectStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT3) + OutputStride * (VectorCount - 1)) XMFLOAT3* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t VectorCount,
+        _sal_In_ float ViewportX, _sal_In_ float ViewportY, _sal_In_ float ViewportWidth, _sal_In_ float ViewportHeight, _sal_In_ float ViewportMinZ, _sal_In_ float ViewportMaxZ,
+        _sal_In_ FXMMATRIX Projection, _sal_In_ CXMMATRIX View, _sal_In_ CXMMATRIX World) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector3Unproject(FXMVECTOR V, float ViewportX, float ViewportY, float ViewportWidth, float ViewportHeight, float ViewportMinZ, float ViewportMaxZ,
         FXMMATRIX Projection, CXMMATRIX View, CXMMATRIX World) noexcept;
-    XMFLOAT3* XM_CALLCONV     XMVector3UnprojectStream(_Out_writes_bytes_(sizeof(XMFLOAT3) + OutputStride * (VectorCount - 1)) XMFLOAT3* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
-        _In_ size_t InputStride, _In_ size_t VectorCount,
-        _In_ float ViewportX, _In_ float ViewportY, _In_ float ViewportWidth, _In_ float ViewportHeight, _In_ float ViewportMinZ, _In_ float ViewportMaxZ,
-        _In_ FXMMATRIX Projection, _In_ CXMMATRIX View, _In_ CXMMATRIX World) noexcept;
+    XMFLOAT3* XM_CALLCONV     XMVector3UnprojectStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT3) + OutputStride * (VectorCount - 1)) XMFLOAT3* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT3) + InputStride * (VectorCount - 1)) const XMFLOAT3* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t VectorCount,
+        _sal_In_ float ViewportX, _sal_In_ float ViewportY, _sal_In_ float ViewportWidth, _sal_In_ float ViewportHeight, _sal_In_ float ViewportMinZ, _sal_In_ float ViewportMaxZ,
+        _sal_In_ FXMMATRIX Projection, _sal_In_ CXMMATRIX View, _sal_In_ CXMMATRIX World) noexcept;
 
     /****************************************************************************
      *
@@ -1411,10 +1499,10 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMVector4AngleBetweenNormals(FXMVECTOR N1, FXMVECTOR N2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector4AngleBetweenVectors(FXMVECTOR V1, FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMVector4Transform(FXMVECTOR V, FXMMATRIX M) noexcept;
-    XMFLOAT4* XM_CALLCONV     XMVector4TransformStream(_Out_writes_bytes_(sizeof(XMFLOAT4) + OutputStride * (VectorCount - 1)) XMFLOAT4* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT4) + InputStride * (VectorCount - 1)) const XMFLOAT4* pInputStream,
-        _In_ size_t InputStride, _In_ size_t VectorCount, _In_ FXMMATRIX M) noexcept;
+    XMFLOAT4* XM_CALLCONV     XMVector4TransformStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT4) + OutputStride * (VectorCount - 1)) XMFLOAT4* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT4) + InputStride * (VectorCount - 1)) const XMFLOAT4* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t VectorCount, _sal_In_ FXMMATRIX M) noexcept;
 
     /****************************************************************************
      *
@@ -1429,12 +1517,12 @@ namespace DirectX
     XMMATRIX    XM_CALLCONV     XMMatrixMultiply(FXMMATRIX M1, CXMMATRIX M2) noexcept;
     XMMATRIX    XM_CALLCONV     XMMatrixMultiplyTranspose(FXMMATRIX M1, CXMMATRIX M2) noexcept;
     XMMATRIX    XM_CALLCONV     XMMatrixTranspose(FXMMATRIX M) noexcept;
-    XMMATRIX    XM_CALLCONV     XMMatrixInverse(_Out_opt_ XMVECTOR* pDeterminant, _In_ FXMMATRIX M) noexcept;
+    XMMATRIX    XM_CALLCONV     XMMatrixInverse(_sal_Out_opt_ XMVECTOR* pDeterminant, _sal_In_ FXMMATRIX M) noexcept;
     XMMATRIX    XM_CALLCONV     XMMatrixVectorTensorProduct(FXMVECTOR V1, FXMVECTOR V2) noexcept;
     XMVECTOR    XM_CALLCONV     XMMatrixDeterminant(FXMMATRIX M) noexcept;
 
     _Success_(return)
-    bool        XM_CALLCONV     XMMatrixDecompose(_Out_ XMVECTOR* outScale, _Out_ XMVECTOR* outRotQuat, _Out_ XMVECTOR* outTrans, _In_ FXMMATRIX M) noexcept;
+    bool        XM_CALLCONV     XMMatrixDecompose(_sal_Out_ XMVECTOR* outScale, _sal_Out_ XMVECTOR* outRotQuat, _sal_Out_ XMVECTOR* outTrans, _sal_In_ FXMMATRIX M) noexcept;
 
     XMMATRIX    XM_CALLCONV     XMMatrixIdentity() noexcept;
     XMMATRIX    XM_CALLCONV     XMMatrixSet(float m00, float m01, float m02, float m03,
@@ -1506,7 +1594,7 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMQuaternionSlerpV(FXMVECTOR Q0, FXMVECTOR Q1, FXMVECTOR T) noexcept;
     XMVECTOR    XM_CALLCONV     XMQuaternionSquad(FXMVECTOR Q0, FXMVECTOR Q1, FXMVECTOR Q2, GXMVECTOR Q3, float t) noexcept;
     XMVECTOR    XM_CALLCONV     XMQuaternionSquadV(FXMVECTOR Q0, FXMVECTOR Q1, FXMVECTOR Q2, GXMVECTOR Q3, HXMVECTOR T) noexcept;
-    void        XM_CALLCONV     XMQuaternionSquadSetup(_Out_ XMVECTOR* pA, _Out_ XMVECTOR* pB, _Out_ XMVECTOR* pC, _In_ FXMVECTOR Q0, _In_ FXMVECTOR Q1, _In_ FXMVECTOR Q2, _In_ GXMVECTOR Q3) noexcept;
+    void        XM_CALLCONV     XMQuaternionSquadSetup(_sal_Out_ XMVECTOR* pA, _sal_Out_ XMVECTOR* pB, _sal_Out_ XMVECTOR* pC, _sal_In_ FXMVECTOR Q0, _sal_In_ FXMVECTOR Q1, _sal_In_ FXMVECTOR Q2, _sal_In_ GXMVECTOR Q3) noexcept;
     XMVECTOR    XM_CALLCONV     XMQuaternionBaryCentric(FXMVECTOR Q0, FXMVECTOR Q1, FXMVECTOR Q2, float f, float g) noexcept;
     XMVECTOR    XM_CALLCONV     XMQuaternionBaryCentricV(FXMVECTOR Q0, FXMVECTOR Q1, FXMVECTOR Q2, GXMVECTOR F, HXMVECTOR G) noexcept;
 
@@ -1517,7 +1605,7 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMQuaternionRotationAxis(FXMVECTOR Axis, float Angle) noexcept;
     XMVECTOR    XM_CALLCONV     XMQuaternionRotationMatrix(FXMMATRIX M) noexcept;
 
-    void        XM_CALLCONV     XMQuaternionToAxisAngle(_Out_ XMVECTOR* pAxis, _Out_ float* pAngle, _In_ FXMVECTOR Q) noexcept;
+    void        XM_CALLCONV     XMQuaternionToAxisAngle(_sal_Out_ XMVECTOR* pAxis, _sal_Out_ float* pAngle, _sal_In_ FXMVECTOR Q) noexcept;
 
     /****************************************************************************
      *
@@ -1538,12 +1626,12 @@ namespace DirectX
     XMVECTOR    XM_CALLCONV     XMPlaneNormalizeEst(FXMVECTOR P) noexcept;
     XMVECTOR    XM_CALLCONV     XMPlaneNormalize(FXMVECTOR P) noexcept;
     XMVECTOR    XM_CALLCONV     XMPlaneIntersectLine(FXMVECTOR P, FXMVECTOR LinePoint1, FXMVECTOR LinePoint2) noexcept;
-    void        XM_CALLCONV     XMPlaneIntersectPlane(_Out_ XMVECTOR* pLinePoint1, _Out_ XMVECTOR* pLinePoint2, _In_ FXMVECTOR P1, _In_ FXMVECTOR P2) noexcept;
+    void        XM_CALLCONV     XMPlaneIntersectPlane(_sal_Out_ XMVECTOR* pLinePoint1, _sal_Out_ XMVECTOR* pLinePoint2, _sal_In_ FXMVECTOR P1, _sal_In_ FXMVECTOR P2) noexcept;
     XMVECTOR    XM_CALLCONV     XMPlaneTransform(FXMVECTOR P, FXMMATRIX M) noexcept;
-    XMFLOAT4* XM_CALLCONV     XMPlaneTransformStream(_Out_writes_bytes_(sizeof(XMFLOAT4) + OutputStride * (PlaneCount - 1)) XMFLOAT4* pOutputStream,
-        _In_ size_t OutputStride,
-        _In_reads_bytes_(sizeof(XMFLOAT4) + InputStride * (PlaneCount - 1)) const XMFLOAT4* pInputStream,
-        _In_ size_t InputStride, _In_ size_t PlaneCount, _In_ FXMMATRIX M) noexcept;
+    XMFLOAT4* XM_CALLCONV     XMPlaneTransformStream(_sal_Out_writes_bytes_(sizeof(XMFLOAT4) + OutputStride * (PlaneCount - 1)) XMFLOAT4* pOutputStream,
+        _sal_In_ size_t OutputStride,
+        _sal_In_reads_bytes_(sizeof(XMFLOAT4) + InputStride * (PlaneCount - 1)) const XMFLOAT4* pInputStream,
+        _sal_In_ size_t InputStride, _sal_In_ size_t PlaneCount, _sal_In_ FXMMATRIX M) noexcept;
 
     XMVECTOR    XM_CALLCONV     XMPlaneFromPointNormal(FXMVECTOR Point, FXMVECTOR Normal) noexcept;
     XMVECTOR    XM_CALLCONV     XMPlaneFromPoints(FXMVECTOR Point1, FXMVECTOR Point2, FXMVECTOR Point3) noexcept;
@@ -1613,8 +1701,8 @@ namespace DirectX
     float           XMScalarCos(float Value) noexcept;
     float           XMScalarCosEst(float Value) noexcept;
 
-    void            XMScalarSinCos(_Out_ float* pSin, _Out_ float* pCos, float Value) noexcept;
-    void            XMScalarSinCosEst(_Out_ float* pSin, _Out_ float* pCos, float Value) noexcept;
+    void            XMScalarSinCos(_sal_Out_ float* pSin, _sal_Out_ float* pCos, float Value) noexcept;
+    void            XMScalarSinCosEst(_sal_Out_ float* pSin, _sal_Out_ float* pCos, float Value) noexcept;
 
     float           XMScalarASin(float Value) noexcept;
     float           XMScalarASinEst(float Value) noexcept;
@@ -1719,8 +1807,8 @@ namespace DirectX
     }
 
     // Special-case permute templates
-    template<> constexpr XMVECTOR XM_CALLCONV     XMVectorPermute<0, 1, 2, 3>(FXMVECTOR V1, FXMVECTOR) noexcept { return V1; }
-    template<> constexpr XMVECTOR XM_CALLCONV     XMVectorPermute<4, 5, 6, 7>(FXMVECTOR, FXMVECTOR V2) noexcept { return V2; }
+    template<> inline constexpr XMVECTOR XM_CALLCONV     XMVectorPermute<0, 1, 2, 3>(FXMVECTOR V1, FXMVECTOR) noexcept { return V1; }
+    template<> inline constexpr XMVECTOR XM_CALLCONV     XMVectorPermute<4, 5, 6, 7>(FXMVECTOR, FXMVECTOR V2) noexcept { return V2; }
 
 #if defined(_XM_SSE_INTRINSICS_) && !defined(_XM_NO_INTRINSICS_)
     template<> inline XMVECTOR      XM_CALLCONV     XMVectorPermute<0, 1, 4, 5>(FXMVECTOR V1, FXMVECTOR V2) noexcept { return _mm_movelh_ps(V1, V2); }
@@ -1808,7 +1896,7 @@ namespace DirectX
     }
 
     // Specialized swizzles
-    template<> constexpr XMVECTOR XM_CALLCONV XMVectorSwizzle<0, 1, 2, 3>(FXMVECTOR V) noexcept { return V; }
+    template<> inline constexpr XMVECTOR XM_CALLCONV XMVectorSwizzle<0, 1, 2, 3>(FXMVECTOR V) noexcept { return V; }
 
 #if defined(_XM_SSE_INTRINSICS_) && !defined(_XM_NO_INTRINSICS_)
     template<> inline XMVECTOR      XM_CALLCONV     XMVectorSwizzle<0, 1, 0, 1>(FXMVECTOR V) noexcept { return _mm_movelh_ps(V, V); }
@@ -2062,13 +2150,14 @@ namespace DirectX
      *
      ****************************************************************************/
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4068 4214 4204 4365 4616 4640 6001 6101)
      // C4068/4616: ignore unknown pragmas
      // C4214/4204: nonstandard extension used
      // C4365/4640: Off by default noise
      // C6001/6101: False positives
-
+#endif
 #ifdef _PREFAST_
 #pragma prefast(push)
 #pragma prefast(disable : 25000, "FXMVECTOR is 16 bytes")
@@ -2184,7 +2273,9 @@ namespace DirectX
 #pragma prefast(pop)
 #endif
 
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 } // namespace DirectX
 
